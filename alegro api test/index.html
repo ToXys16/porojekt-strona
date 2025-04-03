@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stolarnia - Strona Główna</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Stolarnia XYZ</h1>
+    </header>
+    <nav>
+        <a href="#o-nas">O nas</a>
+        <a href="#galeria">Galeria</a>
+        <a href="#kontakt">Kontakt</a>
+    </nav>
+    <main class="container">
+        <section id="o-nas" class="box box-large">
+            <h2>O nas</h2>
+            <p>Jesteśmy firmą stolarską z wieloletnim doświadczeniem, oferującą najwyższej jakości meble na zamówienie.</p>
+        </section>
+        <section id="galeria" class="box box-medium gallery">
+            <h2>Galeria</h2>
+            <img src="przykladowy-obraz1.jpg" alt="Przykładowy projekt">
+            <img src="przykladowy-obraz2.jpg" alt="Przykładowy projekt">
+            <img src="przykladowy-obraz3.jpg" alt="Przykładowy projekt">
+        </section>
+        <section id="kontakt" class="box box-small">
+            <h2>Kontakt</h2>
+            <p>Telefon: 123-456-789</p>
+            <p>Email: kontakt@stolarniaxyz.pl</p>
+            <p>Adres: ul. Drewniana 12, 00-000 Miasto</p>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 Stolarnia XYZ. Wszelkie prawa zastrzeżone.</p>
+    </footer>
+    <script>
+        async function fetchAllegroProducts() {
+            try {
+                const clientId = "TWOJ_CLIENT_ID";
+                const clientSecret = "TWOJ_CLIENT_SECRET";
+                const categoryId = "12345"; // ID kategorii z Allegro
+                const tokenUrl = "https://allegro.pl/auth/oauth/token";
+                const apiUrl = `https://api.allegro.pl/offers/listing?category.id=${categoryId}`;
+
+                // Pobieranie tokena dostępu
+                const tokenResponse = await fetch(tokenUrl, {
+                    method: "POST",
+                    headers: {
+                        Authorization: "Basic " + btoa(`${clientId}:${clientSecret}`),
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        Accept: "application/json",
+                    },
+                    body: "grant_type=client_credentials",
+                });
+
+                const tokenData = await tokenResponse.json();
+                const accessToken = tokenData.access_token;
+
+                // Pobieranie produktów
+                const response = await fetch(apiUrl, {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        Accept: "application/vnd.allegro.public.v1+json",
+                    },
+                });
+
+                const data = await response.json();
+                return data.items.promoted || [];
+            } catch (error) {
+                console.error("Błąd pobierania danych:", error);
+                return [];
+            }
+        }
+
+        async function renderProducts() {
+            const products = await fetchAllegroProducts();
+            const productsGrid = document.getElementById("productsGrid");
+
+            if (products.length === 0) {
+                productsGrid.innerHTML = "<p>Nie znaleziono produktów.</p>";
+                return;
+            }
+
+            productsGrid.innerHTML = "";
+            products.forEach((product) => {
+                const productCard = document.createElement("div");
+                productCard.classList.add("product-card");
+
+                productCard.innerHTML = `
+                    <img src="${product.images ? product.images[0].url : 'https://via.placeholder.com/150'}" alt="${product.name}">
+                    <h3>${product.name}</h3>
+                    <p>${product.sellingMode.price.amount} PLN</p>
+                    <a href="${product.url}" target="_blank">Zobacz na Allegro</a>
+                `;
+
+                productsGrid.appendChild(productCard);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", renderProducts);
+    </script>
+</body>
+</html>
